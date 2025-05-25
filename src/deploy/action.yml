@@ -1,0 +1,16 @@
+name: 'Deploy'
+description: 'Action for deploying apps to decentapps.net'
+author: 'Erik Hermansen'
+runs:
+  using: 'node16'
+  main: 'main.js'
+  branding:
+    icon: 'upload'
+    color: 'orange'
+inputs:
+  api-key:
+    description: 'Decent API key for authentication'
+    required: true
+  app-name:
+    description: 'Name of the app to deploy'
+    required: true
