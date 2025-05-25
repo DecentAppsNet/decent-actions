@@ -1,8 +1,8 @@
-import { executeTasksWithMaxConcurrency } from '../../common/concurrentUtil.ts';
-import { fatalError, finalSuccess, getGithubCommitHash, getInput, getProjectLocalPath, getRepoOwner, runningInGithubCI } from '../../common/githubUtil.ts';
-import { findFilesAtPath, writeAppVersionFile } from '../../common/localFileUtil.ts';
-import { putFile, putStageIndex } from '../../common/partnerServiceClient.ts';
-import { findAppVersions } from '../../common/stageIndexUtil.ts';
+import { executeTasksWithMaxConcurrency } from '../common/concurrentUtil.ts';
+import { fatalError, finalSuccess, getGithubCommitHash, getInput, getProjectLocalPath, getRepoOwner, runningInGithubCI } from '../common/githubUtil.ts';
+import { findFilesAtPath, writeAppVersionFile } from '../common/localFileUtil.ts';
+import { putFile, putStageIndex } from '../common/partnerServiceClient.ts';
+import { findAppVersions } from '../common/stageIndexUtil.ts';
 
 async function deployAction() {
   try {
