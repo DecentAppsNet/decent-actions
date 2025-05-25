@@ -28,11 +28,17 @@ jobs:
       - name: Build and Deploy "Deploy" Action
         run: .github/workflows/deployAction.sh deploy
         shell: bash
+        env:
+          ACTIONS_PUSH_TOKEN: ${{ secrets.ACTIONS_PUSH_TOKEN }}
 
       - name: Build and Deploy "Promote" Action
         run: .github/workflows/deployAction.sh promote
         shell: bash
+        env:
+          ACTIONS_PUSH_TOKEN: ${{ secrets.ACTIONS_PUSH_TOKEN }}
 
       - name: Build and Deploy "Rollback" Action
         run: .github/workflows/deployAction.sh rollback
         shell: bash
+        env:
+          ACTIONS_PUSH_TOKEN: ${{ secrets.ACTIONS_PUSH_TOKEN }}
