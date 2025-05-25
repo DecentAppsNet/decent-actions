@@ -1,5 +1,5 @@
 name: 'Deploy'
-description: 'Action for deploying apps to decentapps.net'
+description: 'Deploy app to staging on decentapps.net'
 author: 'Erik Hermansen'
 runs:
   using: 'node16'
