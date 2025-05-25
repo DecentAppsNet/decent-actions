@@ -17,6 +17,7 @@ printf " done\n"
 echo -n "Clone existing action repo to dist folder..."
 if [[ "$token" == "localTesting" ]]; then
   if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+    printf " FAILED\n"
     echo "::error::ACTIONS_PUSH_TOKEN is not set and is needed when running in Github CI."
     exit 1
   fi
@@ -25,6 +26,7 @@ else
   cloneUrl="https://$token@github.com/DecentAppsNet/$actionName.git"
 fi
 git clone "$cloneUrl" "$distPath" > /dev/null 2>&1 || {
+  printf " FAILED\n"
   echo "::error::Failed to clone \"$actionName\" action repository."
   exit 1
 }
@@ -37,7 +39,11 @@ cp ./LICENSE "$distPath/"
 cp ./action.yml "$distPath/"
 printf " done\n"
 echo -n "Building \"$actionName\" action in the dist folder..."
-npx esbuild ./main.ts --bundle --platform=node --format=esm --outfile="$distPath"/main.js --minify > /dev/null 2>&1
+npx esbuild ./main.ts --bundle --platform=node --format=esm --outfile="$distPath"/main.js --minify > /dev/null 2>&1 || {
+  printf " FAILED\n"
+  echo "::error::Failed to build \"$actionName\" action."
+  exit 1
+}
 printf " done\n"
 
 echo -n "Does new dist folder build differ from what is already in the action repo?..."
