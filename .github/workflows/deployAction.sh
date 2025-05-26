@@ -58,7 +58,7 @@ fi
 printf " yes.\n"
 
 echo -n "Determining next semantic version tag..."
-latestTag=$(git describe --tags --abbrev=0 2>/dev/null || echo "none")
+latestTag=$(git tag --sort=-v:refname | grep '^v[0-9]\+\.[0-9]\+\.[0-9]\+$' | head -n1 2>/dev/null || echo "none")
 nextVersion=$(node "$bumpScriptPath" "$latestTag" "${MAJOR_MINOR_VERSION:-}")
 nextMajorVersion="${nextVersion%%.*}"  # Removes everything after first dot, e.g. "v1.2.3" -> "v1".
 if git rev-parse "$nextVersion" >/dev/null 2>&1; then
