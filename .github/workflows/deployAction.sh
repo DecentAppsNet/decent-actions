@@ -47,6 +47,8 @@ npx esbuild ./main.ts --bundle --platform=node --format=esm --outfile="$distPath
 }
 printf " done\n"
 
+echo "Major/minor version is set to: ${MAJOR_MINOR_VERSION:-none}"
+
 echo -n "Does new dist folder build differ from what is already in the action repo?..."
 cd "$distPath" || exit 1
 git add .
