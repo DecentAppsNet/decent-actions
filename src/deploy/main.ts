@@ -34,7 +34,7 @@ async function deployAction() {
     // Upload files concurrently with retries on failure.
     let uploadCount = 0;
     const MAX_FAIL_COUNT = 3;
-    const MAX_CONCURRENT_UPLOADS = 10;
+    const MAX_CONCURRENT_UPLOADS = 10; // Seems generous enough. We can tweak it if we get rate-limited.
     for (let failCount = 0; failCount < MAX_FAIL_COUNT; ++failCount) {
       if (failCount > 0) console.warn(`Retrying after failed uploads... (${failCount + 1}/${MAX_FAIL_COUNT})`);
       try {
