@@ -69,11 +69,15 @@ fi
 printf " $nextVersion\n"
 
 echo -n "Deploying new version of action..."
-git commit -am "Updating \"$actionName\" action. See https://github.com/DecentAppsNet/decent-actions monorepo for relevant source commit history." 2>/dev/null || {
+tmpErr=$(mktemp)
+git commit -am "Updating \"$actionName\" action. See https://github.com/DecentAppsNet/decent-actions monorepo for relevant source commit history." 2>"$tmpErr" || {
   printf " FAILED\n"
   echo "::error::Failed to commit changes for \"$actionName\" action."
+  echo "::error::Commit error details:"
+  cat "$tmpErr"
   exit 1
 }
+rm -f "$tmpErr"
 git tag "$nextVersion" 2>/dev/null || {
   printf " FAILED\n"
   echo "::error::Failed to create \"$nextVersion\" tag for \"$actionName\" action."
