@@ -16,7 +16,7 @@ export function notice(message:string):void {
 }
 
 export function finalSuccess(message:string):void {
-  notice(`\u2705 SUCCESS - ${message}`);
+  notice(`\u2705 ${message}`);
 }
 
 export function info(message:string):void {
