@@ -30,15 +30,18 @@ jobs:
         shell: bash
         env:
           ACTIONS_PUSH_TOKEN: ${{ secrets.ACTIONS_PUSH_TOKEN }}
+          MAJOR_MINOR_VERSION: ${{ vars.MAJOR_MINOR_VERSION }}
 
       - name: Build and Deploy "Promote" Action
         run: .github/workflows/deployAction.sh promote
         shell: bash
         env:
           ACTIONS_PUSH_TOKEN: ${{ secrets.ACTIONS_PUSH_TOKEN }}
+          MAJOR_MINOR_VERSION: ${{ vars.MAJOR_MINOR_VERSION }}
 
       - name: Build and Deploy "Rollback" Action
         run: .github/workflows/deployAction.sh rollback
         shell: bash
         env:
           ACTIONS_PUSH_TOKEN: ${{ secrets.ACTIONS_PUSH_TOKEN }}
+          MAJOR_MINOR_VERSION: ${{ vars.MAJOR_MINOR_VERSION }}
