@@ -69,6 +69,8 @@ fi
 printf " $nextVersion\n"
 
 echo -n "Deploying new version of action..."
+git config user.name "Decent Deploy Bot"
+git config user.email "info@decentapps.net"
 tmpErr=$(mktemp)
 git commit -am "Updating \"$actionName\" action. See https://github.com/DecentAppsNet/decent-actions monorepo for relevant source commit history." 2>"$tmpErr" || {
   printf " FAILED\n"
