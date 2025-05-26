@@ -4,6 +4,7 @@ set -euo pipefail # Exit on error, undefined variable, or pipe failure.
 actionName="$1"
 distPath="$(pwd)/dist/$actionName"
 srcPath="$(pwd)/src/$actionName"
+bumpScriptPath="$(pwd)/.github/workflows/bumpVersion.js"
 token="${ACTIONS_PUSH_TOKEN:-localTesting}"
 
 echo -n "Prepare dist folder for receiving clone..."
@@ -56,10 +57,41 @@ if git diff-index --quiet HEAD --; then
 fi
 printf " yes.\n"
 
-echo -n "Changes detected, so deploying new version of action..."
-git commit -am "Updating \"$actionName\" action. See https://github.com/DecentAppsNet/decent-actions monorepo for relevant source commit history."
-git push origin main || {
+echo -n "Determining next semantic version tag..."
+latestTag=$(git describe --tags --abbrev=0 2>/dev/null || echo "none")
+nextVersion=$(node "$bumpScriptPath" "$latestTag" "${MAJOR_MINOR_VERSION:-}")
+nextMajorVersion="${nextVersion%%.*}"  # Removes everything after first dot, e.g. "v1.2.3" -> "v1".
+if git rev-parse "$nextVersion" >/dev/null 2>&1; then
+  printf " FAILED\n"
+  echo "::error::Tag $nextVersion already exists. Aborting."
+  exit 1
+fi
+printf " $nextVersion\n"
+
+echo -n "Deploying new version of action..."
+git commit -am "Updating \"$actionName\" action. See https://github.com/DecentAppsNet/decent-actions monorepo for relevant source commit history." 2>/dev/null || {
+  printf " FAILED\n"
+  echo "::error::Failed to commit changes for \"$actionName\" action."
+  exit 1
+}
+git tag "$nextVersion" 2>/dev/null || {
+  printf " FAILED\n"
+  echo "::error::Failed to create \"$nextVersion\" tag for \"$actionName\" action."
+  exit 1
+}
+git tag -f "$nextMajorVersion" 2>/dev/null || {
+  printf " FAILED\n"
+  echo "::error::Failed to update \"$nextMajorVersion\" tag for \"$actionName\" action."
+  exit 1
+}
+git push origin main "$nextVersion" 2>/dev/null || {
+  printf " FAILED\n"
   echo "::error::Failed to push changes for \"$actionName\" action."
+  exit 1
+}
+git push origin -f "$nextMajorVersion" 2>/dev/null || {
+  printf " FAILED\n"
+  echo "::error::Failed to push major version tag for \"$actionName\" action. Manual cleanup of repo state may be required."
   exit 1
 }
 printf " done\n"
