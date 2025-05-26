@@ -1,12 +1,12 @@
 name: 'Deploy'
 description: 'Deploy app to staging on decentapps.net'
 author: 'Erik Hermansen'
+branding:
+  icon: 'upload'
+  color: 'orange'
 runs:
   using: 'node16'
   main: 'main.js'
-  branding:
-    icon: 'upload'
-    color: 'orange'
 inputs:
   api-key:
     description: 'Decent API key for authentication'

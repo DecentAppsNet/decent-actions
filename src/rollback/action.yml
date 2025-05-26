@@ -1,12 +1,12 @@
 name: 'Rollback'
 description: 'Roll back app to previous production version on decentapps.net'
 author: 'Erik Hermansen'
+branding:
+  icon: 'rotate-ccw'
+  color: 'orange'
 runs:
   using: 'node16'
   main: 'main.js'
-  branding:
-    icon: 'rotate-ccw'
-    color: 'orange'
 inputs:
   api-key:
     description: 'Decent API key for authentication'
