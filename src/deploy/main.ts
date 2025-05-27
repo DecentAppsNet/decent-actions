@@ -60,7 +60,7 @@ async function deployAction() {
     finalSuccess(`Successfully deployed ${uploadCount} files to ${stageUrl}.`);
   } catch (error) {
     // For security reasons, don't show unexpected error details in Github CI output.
-    const showErrorDetails = !runningInGithubCI() || error.name === 'ExpectedError';
+    const showErrorDetails = true; // !runningInGithubCI() || error.name === 'ExpectedError';
     const errorMessage = showErrorDetails ? error.message : 'An unexpected error occurred.';
     fatalError(errorMessage);
   }
