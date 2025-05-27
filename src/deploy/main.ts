@@ -1,4 +1,5 @@
 import { executeTasksWithMaxConcurrency } from '../common/concurrentUtil.ts';
+import { logEnvVars } from '../common/debugUtil.ts';
 import { fatalError, finalSuccess, getGithubCommitHash, getInput, getProjectLocalPath, getRepoOwner, runningInGithubCI } from '../common/githubUtil.ts';
 import { findFilesAtPath, writeAppVersionFile } from '../common/localFileUtil.ts';
 import { putFile, putStageIndex } from '../common/partnerServiceClient.ts';
@@ -6,6 +7,8 @@ import { findAppVersions } from '../common/stageIndexUtil.ts';
 
 async function deployAction() {
   try {
+    logEnvVars(); // TODO delete later.
+
     // Get all params. These throw if not set or are invalid.
     const stageVersion = getGithubCommitHash(); // Env var GITHUB_SHA - can be a 7-character or 40-character alphanumeric. For testing purposes, "9999999" is good.
     const repoOwner = getRepoOwner(); // Env var GITHUB_REPOSITORY_OWNER - repo owner that must match provisioning on the partner service.
