@@ -17,6 +17,7 @@ async function deployAction() {
 
     // Write version.txt file to the local dist path. This file will be uploaded with other files and can be used to verify the deployment.
     const localDistPath = `${getProjectLocalPath()}/dist/`;
+    console.log(`Writing version file to ${localDistPath}...`);
     await writeAppVersionFile(stageVersion, localDistPath);
     
     // Create a set of task functions to upload files concurrently.
@@ -32,6 +33,11 @@ async function deployAction() {
       }
     }
     const localFilepaths = await findFilesAtPath(localDistPath);
+    // Log all local filepaths
+    console.log(`Found ${localFilepaths.length} files to upload:`);
+    localFilepaths.forEach((filepath, index) => {
+      console.log(`  ${index + 1}: ${filepath}`);
+    });
     const uploadTasks = localFilepaths.map((_, index) => () => _uploadOneFileTask(index));
 
     // Upload files concurrently with retries on failure.
