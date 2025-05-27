@@ -61,7 +61,7 @@ async function deployAction() {
   } catch (error) {
     // For security reasons, don't show unexpected error details in Github CI output.
     const showErrorDetails = true; // !runningInGithubCI() || error.name === 'ExpectedError';
-    const errorMessage = showErrorDetails ? error.message : 'An unexpected error occurred.';
+    const errorMessage = showErrorDetails ? `Exception: ${error.stack}` : 'An unexpected error occurred.';
     fatalError(errorMessage);
   }
 }
