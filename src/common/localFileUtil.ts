@@ -52,12 +52,19 @@ export async function createDirectoryAsNeeded(dirPath:string) {
 }
 
 async function _put(localFilePath:string, data:string|Uint8Array):Promise<void> {
+  console.log(`Writing data to local file: ${localFilePath}`); // TODO delete
   return new Promise<void>((resolve, reject) => {
+    console.log(`_put:!!1`); // TODO delete
     const writeStream = createWriteStream(localFilePath);
+    console.log(`_put:!!2`); // TODO delete
     writeStream.write(data);
+    console.log(`_put:!!3`); // TODO delete
     writeStream.end();
+    console.log(`_put:!!4`); // TODO delete
     writeStream.on('finish', () => resolve());
+    console.log(`_put:!!5`); // TODO delete
     writeStream.on('error', (err) => reject(err));
+    console.log(`_put:!!6`); // TODO delete
   }).catch((err) => { throw err; });
 }
 

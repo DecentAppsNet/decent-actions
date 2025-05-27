@@ -7,8 +7,6 @@ import { findAppVersions } from '../common/stageIndexUtil.ts';
 
 async function deployAction() {
   try {
-    logEnvVars(); // TODO delete later.
-
     // Get all params. These throw if not set or are invalid.
     const stageVersion = getGithubCommitHash(); // Env var GITHUB_SHA - can be a 7-character or 40-character alphanumeric. For testing purposes, "9999999" is good.
     const repoOwner = getRepoOwner(); // Env var GITHUB_REPOSITORY_OWNER - repo owner that must match provisioning on the partner service.
@@ -17,7 +15,7 @@ async function deployAction() {
 
     // Write version.txt file to the local dist path. This file will be uploaded with other files and can be used to verify the deployment.
     const localDistPath = `${getProjectLocalPath()}/dist/`;
-    console.log(`Writing version file to ${localDistPath}...`);
+    console.log(`Writing version file to ${localDistPath}...`); // TODO delete
     await writeAppVersionFile(stageVersion, localDistPath);
     
     // Create a set of task functions to upload files concurrently.
@@ -34,10 +32,10 @@ async function deployAction() {
     }
     const localFilepaths = await findFilesAtPath(localDistPath);
     // Log all local filepaths
-    console.log(`Found ${localFilepaths.length} files to upload:`);
-    localFilepaths.forEach((filepath, index) => {
-      console.log(`  ${index + 1}: ${filepath}`);
-    });
+    console.log(`Found ${localFilepaths.length} files to upload:`); // TODO delete
+    localFilepaths.forEach((filepath, index) => { // TODO delete
+      console.log(`  ${index + 1}: ${filepath}`); // TODO delete
+    }); // TODO delete
     const uploadTasks = localFilepaths.map((_, index) => () => _uploadOneFileTask(index));
 
     // Upload files concurrently with retries on failure.
@@ -50,7 +48,7 @@ async function deployAction() {
         await executeTasksWithMaxConcurrency(uploadTasks, MAX_CONCURRENT_UPLOADS);
         if (uploadCount === localFilepaths.length) break; // If all files were uploaded successfully, exit the loop.
       } catch (error) {
-        console.error(`Unexpected error while uploading files: ${error.message}.`); // The task function should have caught exception.
+        error(`Unexpected error while uploading files: ${error.message}.`); // The task function should have caught exception.
       }
     }
     if (uploadCount < localFilepaths.length) {
