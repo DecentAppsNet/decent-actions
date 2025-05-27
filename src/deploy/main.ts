@@ -1,7 +1,7 @@
 import { executeTasksWithMaxConcurrency } from '../common/concurrentUtil.ts';
 import { logEnvVars } from '../common/debugUtil.ts';
 import { fatalError, finalSuccess, getGithubCommitHash, getInput, getProjectLocalPath, getRepoOwner, runningInGithubCI } from '../common/githubUtil.ts';
-import { findFilesAtPath, writeAppVersionFile } from '../common/localFileUtil.ts';
+import { createDirectoryAsNeeded, findFilesAtPath, writeAppVersionFile } from '../common/localFileUtil.ts';
 import { putFile, putStageIndex } from '../common/partnerServiceClient.ts';
 import { findAppVersions } from '../common/stageIndexUtil.ts';
 
@@ -15,6 +15,7 @@ async function deployAction() {
 
     // Write version.txt file to the local dist path. This file will be uploaded with other files and can be used to verify the deployment.
     const localDistPath = `${getProjectLocalPath()}/dist/`;
+    await createDirectoryAsNeeded(localDistPath);
     console.log(`Writing version file to ${localDistPath}...`); // TODO delete
     await writeAppVersionFile(stageVersion, localDistPath);
     
