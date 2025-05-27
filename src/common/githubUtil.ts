@@ -29,7 +29,7 @@ export function fatalError(message: string):never {
 }
 
 export function getInput(name: string, required: boolean = false):string {
-  const key = `INPUT_${name.replace(/-/g, '_').toUpperCase()}`; // e.g. "api-key" -> "INPUT_API_KEY"
+  const key = `INPUT_${name.replace(/ /g, '_').toUpperCase()}`; // e.g. "api-key" -> "INPUT_API_KEY"
   const value = process.env[key];
   if (required && !value) fatalError(`Input ${name} is required.`);
   return value || '';
