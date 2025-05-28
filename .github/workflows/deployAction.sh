@@ -49,7 +49,11 @@ printf " done\n"
 
 echo -n "Does new dist folder build differ from what is already in the action repo?..."
 cd "$distPath" || exit 1
-git add .
+git add . 2>/dev/null || {
+  printf " FAILED\n"
+  echo "::error::Failed to add files to \"$actionName\" action repository."
+  exit 1
+}
 if git diff-index --quiet HEAD --; then
   printf " no.\n"
   echo "::notice::✅ No changes for \"$actionName\" action found, so skipping deployment."
@@ -72,6 +76,11 @@ echo -n "Writing version file..."
 echo "$nextVersion" > "$distPath/version.txt" || {
   printf " FAILED\n"
   echo "::error::Failed to write version file for \"$actionName\" action."
+  exit 1
+}
+git add version.txt 2>/dev/null || {
+  printf " FAILED\n"
+  echo "::error::Failed to add version file for \"$actionName\" action."
   exit 1
 }
 printf " done\n"
