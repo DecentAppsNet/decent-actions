@@ -1,45 +1,48 @@
 import { executeTasksWithMaxConcurrency } from '../common/concurrentUtil.ts';
-import { logEnvVars } from '../common/debugUtil.ts';
-import { fatalError, finalSuccess, getGithubCommitHash, getInput, getProjectLocalPath, getRepoOwner, runningInGithubCI } from '../common/githubUtil.ts';
+import { endGroup, endTask, failTask, fatalError, finalSuccess, getGithubCommitHash, getInput, getProjectLocalPath, getRepoOwner, runningInGithubCI, startGroup, startTask } from '../common/githubUtil.ts';
 import { createDirectoryAsNeeded, findFilesAtPath, writeAppVersionFile } from '../common/localFileUtil.ts';
 import { putFile, putStageIndex } from '../common/partnerServiceClient.ts';
 import { findAppVersions } from '../common/stageIndexUtil.ts';
 
 async function deployAction() {
   try {
+    startGroup('Collecting inputs needed for deployment')
     // Get all params. These throw if not set or are invalid.
     const stageVersion = getGithubCommitHash(); // Env var GITHUB_SHA - can be a 7-character or 40-character alphanumeric. For testing purposes, "9999999" is good.
     const repoOwner = getRepoOwner(); // Env var GITHUB_REPOSITORY_OWNER - repo owner that must match provisioning on the partner service.
     const apiKey = getInput('api-key', true); // Env var INPUT_API_KEY - partner API key that must match provisioning on the partner service.
     const appName = getInput('app-name', true); // Env var INPUT_APP_NAME - name of the app that must match provisioning on the partner service.
+    endGroup();
 
     // Write version.txt file to the local dist path. This file will be uploaded with other files and can be used to verify the deployment.
+    startGroup('Preparing local dist path and version file');
     const localDistPath = `${getProjectLocalPath()}/dist/`;
     await createDirectoryAsNeeded(localDistPath);
-    console.log(`Writing version file to ${localDistPath}...`); // TODO delete
     await writeAppVersionFile(stageVersion, localDistPath);
+    endGroup();
     
     // Create a set of task functions to upload files concurrently.
+    startGroup('Preparing files for upload');
     async function _uploadOneFileTask(localFilepathI:number):Promise<void> {
       const localFilepath = localFilepaths[localFilepathI];
       if (localFilepath === '') return; // Skip if already uploaded (marked as empty string).
       try {
+        startTask(`Uploading ${localFilepath}`);
         await putFile(repoOwner, apiKey, appName, stageVersion, localDistPath, localFilepath);
+        endTask();
         localFilepaths[localFilepathI] = ''; // Mark as uploaded by setting to empty string.
         ++uploadCount;
       } catch (error) { // Failing to upload is treated as non-fatal.
+        failTask();
         console.warn(`Failed to upload file ${localFilepath}: ${error.message}.`);
       }
     }
     const localFilepaths = await findFilesAtPath(localDistPath);
-    // Log all local filepaths
-    console.log(`Found ${localFilepaths.length} files to upload:`); // TODO delete
-    localFilepaths.forEach((filepath, index) => { // TODO delete
-      console.log(`  ${index + 1}: ${filepath}`); // TODO delete
-    }); // TODO delete
     const uploadTasks = localFilepaths.map((_, index) => () => _uploadOneFileTask(index));
+    endGroup();
 
     // Upload files concurrently with retries on failure.
+    startGroup(`Uploading ${uploadTasks.length} files`);
     let uploadCount = 0;
     const MAX_FAIL_COUNT = 3;
     const MAX_CONCURRENT_UPLOADS = 10; // Seems generous enough. We can tweak it if we get rate-limited.
@@ -56,10 +59,17 @@ async function deployAction() {
       if (uploadCount === 0) fatalError('Failed to upload any files. See previous warnings for details.');
       fatalError(`Failed to upload all files. Only ${uploadCount} of ${localFilepaths.length} files were uploaded successfully. See previous warnings for details.`);
     }
+    endGroup();
 
     // Update the stage index.
+    startGroup('Updating stage index');
+    startTask('Fetching app versions');
     const { productionVersion, rollbackVersion } = await findAppVersions(appName);
+    endTask();
+    startTask('Uploading new stage index');
     await putStageIndex(repoOwner, apiKey, appName, stageVersion, productionVersion, rollbackVersion, false);
+    endTask();
+    endGroup();
     
     const stageUrl = `https://decentapps.net/_${appName}/${stageVersion}/`;
     finalSuccess(`Successfully deployed ${uploadCount} files to ${stageUrl}.`);

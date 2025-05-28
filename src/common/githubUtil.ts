@@ -23,9 +23,33 @@ export function info(message:string):void {
   console.log(message);
 }
 
-export function fatalError(message: string):never {
+export function fatalError(message:string):never {
   error(message);
   process.exit(1);
+}
+
+export function startGroup(name:string):void {
+  console.log(`::group::${name}`);
+}
+
+export function endGroup():void {
+  console.log(`::endgroup::`);
+}
+
+let lastTaskDescription:string = '';
+export function startTask(taskDescription:string):void {
+  process.stdout.write(`${taskDescription}...`);
+  lastTaskDescription = taskDescription;
+}
+
+export function endTask():void {
+  process.stdout.write(`\r${lastTaskDescription}... done\n`);
+  lastTaskDescription = '';
+}
+
+export function failTask():void {
+  process.stdout.write(`\r${lastTaskDescription}... FAILED\n`);
+  lastTaskDescription = '';
 }
 
 export function getInput(name: string, required: boolean = false):string {
