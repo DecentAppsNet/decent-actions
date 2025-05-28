@@ -46,6 +46,15 @@ export async function doesDirectoryExist(dirPath:string):Promise<boolean> {
   }
 }
 
+export async function doesFileExist(filePath:string):Promise<boolean> {
+  try {
+    const stats = await stat(filePath);
+    return stats.isFile();
+  } catch {
+    return false;
+  }
+}
+
 export async function createDirectoryAsNeeded(dirPath:string) {
   if (await doesDirectoryExist(dirPath)) return;
   await mkdir(dirPath, { recursive: true });

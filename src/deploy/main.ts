@@ -1,6 +1,8 @@
+import { execSync } from 'child_process';
+
 import { executeTasksWithMaxConcurrency } from '../common/concurrentUtil.ts';
-import { endGroup, fatalError, finalSuccess, getGithubCommitHash, getInput, getProjectLocalPath, getRepoOwner, info, runningInGithubCI, startGroup } from '../common/githubUtil.ts';
-import { createDirectoryAsNeeded, findFilesAtPath, writeAppVersionFile } from '../common/localFileUtil.ts';
+import { endGroup, fatalError, finalSuccess, getGithubCommitHash, getInput, getProjectLocalPath, getRepoOwner, info, runningInGithubCI, startGroup, warning } from '../common/githubUtil.ts';
+import { createDirectoryAsNeeded, doesFileExist, findFilesAtPath, writeAppVersionFile } from '../common/localFileUtil.ts';
 import { putFile, putStageIndex } from '../common/partnerServiceClient.ts';
 import { findAppVersions } from '../common/stageIndexUtil.ts';
 
@@ -8,23 +10,35 @@ async function deployAction() {
   try {
     startGroup('Collecting required inputs')
       // These throw if not set or are invalid.
-      info('get commit hash');
+      info('commit hash');
       const stageVersion = getGithubCommitHash(); // Env var GITHUB_SHA - can be a 7-character or 40-character alphanumeric. For testing purposes, "9999999" is good.
-      info('get repo owner');
+      info('repo owner');
       const repoOwner = getRepoOwner(); // Env var GITHUB_REPOSITORY_OWNER - repo owner that must match provisioning on the partner service.
-      info('get Decent API key');
+      info('Decent API key');
       const apiKey = getInput('api-key', true); // Env var INPUT_API_KEY - partner API key that must match provisioning on the partner service.
-      info('get app name');
+      info('app name');
       const appName = getInput('app-name', true); // Env var INPUT_APP_NAME - name of the app that must match provisioning on the partner service.
+      info('project local path');
+      const projectLocalPath = getProjectLocalPath();
     endGroup();
 
     // Write version.txt file to the local dist path. This file will be uploaded with other files and can be used to verify the deployment.
     startGroup('Preparing local dist path and version file');
-      const localDistPath = `${getProjectLocalPath()}/dist/`;
+      const localDistPath = `${projectLocalPath}/dist/`;
       info('create dist directory');
       await createDirectoryAsNeeded(localDistPath);
       info('write version file');
       await writeAppVersionFile(stageVersion, localDistPath);
+    endGroup();
+
+    startGroup('Running build command');
+      info('check for package.json');
+      if (!await doesFileExist(`${projectLocalPath}/package.json`)) {
+        info('No package.json found. Relying on the ./dist directory being pre-built.');
+      } else {
+        info('package.json found. Running npm run build to build to ./dist directory.');
+        execSync('npm run build', { stdio: 'inherit' });
+      }
     endGroup();
     
     // Create a set of task functions to upload files concurrently.
@@ -43,6 +57,7 @@ async function deployAction() {
       }
       info('find files at local dist path');
       const localFilepaths = await findFilesAtPath(localDistPath);
+      if (localFilepaths.length === 1) warning('No files found in ./dist directory besides version.txt. Is your project building to ./dist?');
       info('prepare upload tasks');
       const uploadTasks = localFilepaths.map((_, index) => () => _uploadOneFileTask(index));
     endGroup();

@@ -6,11 +6,11 @@ async function promoteAction() {
   try {
     startGroup('Collecting required inputs');
       // These throw if not set or are invalid.
-      info('get repo owner');
+      info('repo owner');
       const repoOwner = getRepoOwner(); // Env var GITHUB_REPOSITORY_OWNER - repo owner that must match provisioning on the partner service.
-      info('get Decent API key');
+      info('Decent API key');
       const apiKey = getInput('api-key', true); // Env var INPUT_API_KEY - partner API key that must match provisioning on the partner service.
-      info('get app name');
+      info('app name');
       const appName = getInput('app-name', true); // Env var INPUT_APP_NAME - name of the app that must match provisioning on the partner service.
     endGroup();
 
