@@ -5,7 +5,7 @@ import { findAppVersions } from '../common/stageIndexUtil.ts';
 async function rollbackAction() {
   try {
     // Get all params. These throw if not set or are invalid.
-    startGroup('Collecting required inputs');
+    startGroup('Collecting inputs');
       // These throw if not set or are invalid.
       info('repo owner');
       const repoOwner = getRepoOwner(); // Env var GITHUB_REPOSITORY_OWNER - repo owner that must match provisioning on the partner service.
@@ -27,7 +27,7 @@ async function rollbackAction() {
     endGroup();
     
     const productionUrl = `https://decentapps.net/${appName}/`;
-    finalSuccess(`Successfully rolled back production URL "${productionUrl}" to v${productionVersion}. Staging remains at v${stageVersion}.`);
+    finalSuccess(`Successfully rolled back production URL "${productionUrl}" to ${productionVersion} version. Staging remains at ${stageVersion} version.`);
   } catch (error) {
     // For security reasons, don't show unexpected error details in Github CI output.
     const showErrorDetails = !runningInGithubCI() || error.name === 'ExpectedError';
