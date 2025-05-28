@@ -6,7 +6,7 @@ import { findAppVersions } from '../common/stageIndexUtil.ts';
 
 async function deployAction() {
   try {
-    startGroup('Collecting inputs needed for deployment')
+    startGroup('Collecting required inputs')
       // These throw if not set or are invalid.
       info('get commit hash');
       const stageVersion = getGithubCommitHash(); // Env var GITHUB_SHA - can be a 7-character or 40-character alphanumeric. For testing purposes, "9999999" is good.
@@ -80,7 +80,7 @@ async function deployAction() {
   } catch (error) {
     // For security reasons, don't show unexpected error details in Github CI output.
     const showErrorDetails = !runningInGithubCI() || error.name === 'ExpectedError';
-    const errorMessage = showErrorDetails ? `Exception: ${error.stack}` : 'An unexpected error occurred.';
+    const errorMessage = showErrorDetails ? error.message : 'An unexpected error occurred.';
     fatalError(errorMessage);
   }
 }

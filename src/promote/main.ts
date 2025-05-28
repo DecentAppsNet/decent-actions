@@ -1,20 +1,29 @@
-import { fatalError, finalSuccess, getGithubCommitHash, getInput, getProjectLocalPath, getRepoOwner, runningInGithubCI } from '../common/githubUtil.ts';
+import { endGroup, fatalError, finalSuccess, getInput, getRepoOwner, info, runningInGithubCI, startGroup } from '../common/githubUtil.ts';
 import { putStageIndex } from '../common/partnerServiceClient.ts';
 import { findAppVersions } from '../common/stageIndexUtil.ts';
 
 async function promoteAction() {
   try {
-    // Get all params. These throw if not set or are invalid.
-    const repoOwner = getRepoOwner(); // Env var GITHUB_REPOSITORY_OWNER - repo owner that must match provisioning on the partner service.
-    const apiKey = getInput('api-key', true); // Env var INPUT_API_KEY - partner API key that must match provisioning on the partner service.
-    const appName = getInput('app-name', true); // Env var INPUT_APP_NAME - name of the app that must match provisioning on the partner service.
+    startGroup('Collecting required inputs');
+      // These throw if not set or are invalid.
+      info('get repo owner');
+      const repoOwner = getRepoOwner(); // Env var GITHUB_REPOSITORY_OWNER - repo owner that must match provisioning on the partner service.
+      info('get Decent API key');
+      const apiKey = getInput('api-key', true); // Env var INPUT_API_KEY - partner API key that must match provisioning on the partner service.
+      info('get app name');
+      const appName = getInput('app-name', true); // Env var INPUT_APP_NAME - name of the app that must match provisioning on the partner service.
+    endGroup();
 
     // Update the stage index.
-    let { stageVersion, productionVersion, rollbackVersion } = await findAppVersions(appName);
-    if (!stageVersion) fatalError(`No stage version found for app ${appName}. Please deploy first.`);
-    rollbackVersion = productionVersion;
-    productionVersion = stageVersion;
-    await putStageIndex(repoOwner, apiKey, appName, stageVersion, productionVersion, rollbackVersion, true);
+    startGroup('Updating stage index');
+      info('fetch app versions');
+      let { stageVersion, productionVersion, rollbackVersion } = await findAppVersions(appName);
+      if (!stageVersion) fatalError(`No stage version found for app ${appName}. Please deploy first.`);
+      rollbackVersion = productionVersion;
+      productionVersion = stageVersion;
+      info(`uploading new stage index - stage version=${stageVersion}, production version=${productionVersion}, rollback version=${rollbackVersion}`);
+      await putStageIndex(repoOwner, apiKey, appName, stageVersion, productionVersion, rollbackVersion, true);
+    endGroup();
     
     const productionUrl = `https://decentapps.net/${appName}/`;
     const rollbackDescription = rollbackVersion !== '' && rollbackVersion !== productionVersion ? `Rollback available to v${rollbackVersion}.` : 'No rollback available.';
