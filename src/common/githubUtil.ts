@@ -36,22 +36,6 @@ export function endGroup():void {
   console.log(`::endgroup::`);
 }
 
-let lastTaskDescription:string = '';
-export function startTask(taskDescription:string):void {
-  process.stdout.write(`${taskDescription}...`);
-  lastTaskDescription = taskDescription;
-}
-
-export function endTask():void {
-  process.stdout.write(`\r${lastTaskDescription}... done\n`);
-  lastTaskDescription = '';
-}
-
-export function failTask():void {
-  process.stdout.write(`\r${lastTaskDescription}... FAILED\n`);
-  lastTaskDescription = '';
-}
-
 export function getInput(name: string, required: boolean = false):string {
   const key = `INPUT_${name.replace(/ /g, '_').toUpperCase()}`; // e.g. "api-key" -> "INPUT_API_KEY"
   const value = process.env[key];

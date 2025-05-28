@@ -1,5 +1,5 @@
 import { executeTasksWithMaxConcurrency } from '../common/concurrentUtil.ts';
-import { endGroup, endTask, failTask, fatalError, finalSuccess, getGithubCommitHash, getInput, getProjectLocalPath, getRepoOwner, runningInGithubCI, startGroup, startTask } from '../common/githubUtil.ts';
+import { endGroup, fatalError, finalSuccess, getGithubCommitHash, getInput, getProjectLocalPath, getRepoOwner, info, runningInGithubCI, startGroup } from '../common/githubUtil.ts';
 import { createDirectoryAsNeeded, findFilesAtPath, writeAppVersionFile } from '../common/localFileUtil.ts';
 import { putFile, putStageIndex } from '../common/partnerServiceClient.ts';
 import { findAppVersions } from '../common/stageIndexUtil.ts';
@@ -7,75 +7,79 @@ import { findAppVersions } from '../common/stageIndexUtil.ts';
 async function deployAction() {
   try {
     startGroup('Collecting inputs needed for deployment')
-    // Get all params. These throw if not set or are invalid.
-    const stageVersion = getGithubCommitHash(); // Env var GITHUB_SHA - can be a 7-character or 40-character alphanumeric. For testing purposes, "9999999" is good.
-    const repoOwner = getRepoOwner(); // Env var GITHUB_REPOSITORY_OWNER - repo owner that must match provisioning on the partner service.
-    const apiKey = getInput('api-key', true); // Env var INPUT_API_KEY - partner API key that must match provisioning on the partner service.
-    const appName = getInput('app-name', true); // Env var INPUT_APP_NAME - name of the app that must match provisioning on the partner service.
+      // These throw if not set or are invalid.
+      info('get commit hash');
+      const stageVersion = getGithubCommitHash(); // Env var GITHUB_SHA - can be a 7-character or 40-character alphanumeric. For testing purposes, "9999999" is good.
+      info('get repo owner');
+      const repoOwner = getRepoOwner(); // Env var GITHUB_REPOSITORY_OWNER - repo owner that must match provisioning on the partner service.
+      info('get Decent API key');
+      const apiKey = getInput('api-key', true); // Env var INPUT_API_KEY - partner API key that must match provisioning on the partner service.
+      info('get app name');
+      const appName = getInput('app-name', true); // Env var INPUT_APP_NAME - name of the app that must match provisioning on the partner service.
     endGroup();
 
     // Write version.txt file to the local dist path. This file will be uploaded with other files and can be used to verify the deployment.
     startGroup('Preparing local dist path and version file');
-    const localDistPath = `${getProjectLocalPath()}/dist/`;
-    await createDirectoryAsNeeded(localDistPath);
-    await writeAppVersionFile(stageVersion, localDistPath);
+      const localDistPath = `${getProjectLocalPath()}/dist/`;
+      info('create dist directory');
+      await createDirectoryAsNeeded(localDistPath);
+      info('write version file');
+      await writeAppVersionFile(stageVersion, localDistPath);
     endGroup();
     
     // Create a set of task functions to upload files concurrently.
     startGroup('Preparing files for upload');
-    async function _uploadOneFileTask(localFilepathI:number):Promise<void> {
-      const localFilepath = localFilepaths[localFilepathI];
-      if (localFilepath === '') return; // Skip if already uploaded (marked as empty string).
-      try {
-        startTask(`Uploading ${localFilepath}`);
-        await putFile(repoOwner, apiKey, appName, stageVersion, localDistPath, localFilepath);
-        endTask();
-        localFilepaths[localFilepathI] = ''; // Mark as uploaded by setting to empty string.
-        ++uploadCount;
-      } catch (error) { // Failing to upload is treated as non-fatal.
-        failTask();
-        console.warn(`Failed to upload file ${localFilepath}: ${error.message}.`);
+      async function _uploadOneFileTask(localFilepathI:number):Promise<void> {
+        const localFilepath = localFilepaths[localFilepathI];
+        if (localFilepath === '') return; // Skip if already uploaded (marked as empty string).
+        try {
+          info(`upload ${localFilepath}`);
+          await putFile(repoOwner, apiKey, appName, stageVersion, localDistPath, localFilepath);
+          localFilepaths[localFilepathI] = ''; // Mark as uploaded by setting to empty string.
+          ++uploadCount;
+        } catch (error) { // Failing to upload is treated as non-fatal.
+          console.warn(`Failed to upload file ${localFilepath}: ${error.message}.`);
+        }
       }
-    }
-    const localFilepaths = await findFilesAtPath(localDistPath);
-    const uploadTasks = localFilepaths.map((_, index) => () => _uploadOneFileTask(index));
+      info('find files at local dist path');
+      const localFilepaths = await findFilesAtPath(localDistPath);
+      info('prepare upload tasks');
+      const uploadTasks = localFilepaths.map((_, index) => () => _uploadOneFileTask(index));
     endGroup();
 
     // Upload files concurrently with retries on failure.
     startGroup(`Uploading ${uploadTasks.length} files`);
-    let uploadCount = 0;
-    const MAX_FAIL_COUNT = 3;
-    const MAX_CONCURRENT_UPLOADS = 10; // Seems generous enough. We can tweak it if we get rate-limited.
-    for (let failCount = 0; failCount < MAX_FAIL_COUNT; ++failCount) {
-      if (failCount > 0) console.warn(`Retrying after failed uploads... (${failCount + 1}/${MAX_FAIL_COUNT})`);
-      try {
-        await executeTasksWithMaxConcurrency(uploadTasks, MAX_CONCURRENT_UPLOADS);
-        if (uploadCount === localFilepaths.length) break; // If all files were uploaded successfully, exit the loop.
-      } catch (error) {
-        error(`Unexpected error while uploading files: ${error.message}.`); // The task function should have caught exception.
+      let uploadCount = 0;
+      const MAX_FAIL_COUNT = 3;
+      const MAX_CONCURRENT_UPLOADS = 10; // Seems generous enough. We can tweak it if we get rate-limited.
+      for (let failCount = 0; failCount < MAX_FAIL_COUNT; ++failCount) {
+        if (failCount > 0) console.warn(`Retrying after failed uploads... (${failCount + 1}/${MAX_FAIL_COUNT})`);
+        try {
+          await executeTasksWithMaxConcurrency(uploadTasks, MAX_CONCURRENT_UPLOADS);
+          if (uploadCount === localFilepaths.length) break; // If all files were uploaded successfully, exit the loop.
+        } catch (error) {
+          error(`Unexpected error while uploading files: ${error.message}.`); // The task function should have caught exception.
+        }
       }
-    }
-    if (uploadCount < localFilepaths.length) {
-      if (uploadCount === 0) fatalError('Failed to upload any files. See previous warnings for details.');
-      fatalError(`Failed to upload all files. Only ${uploadCount} of ${localFilepaths.length} files were uploaded successfully. See previous warnings for details.`);
-    }
+      if (uploadCount < localFilepaths.length) {
+        if (uploadCount === 0) fatalError('Failed to upload any files. See previous warnings for details.');
+        fatalError(`Failed to upload all files. Only ${uploadCount} of ${localFilepaths.length} files were uploaded successfully. See previous warnings for details.`);
+      }
     endGroup();
 
     // Update the stage index.
     startGroup('Updating stage index');
-    startTask('Fetching app versions');
-    const { productionVersion, rollbackVersion } = await findAppVersions(appName);
-    endTask();
-    startTask('Uploading new stage index');
-    await putStageIndex(repoOwner, apiKey, appName, stageVersion, productionVersion, rollbackVersion, false);
-    endTask();
+      info('fetch app versions');
+      const { productionVersion, rollbackVersion } = await findAppVersions(appName);
+      info(`uploading new stage index - stage version=${stageVersion}, production version=${productionVersion}, rollback version=${rollbackVersion}`);
+      await putStageIndex(repoOwner, apiKey, appName, stageVersion, productionVersion, rollbackVersion, false);
     endGroup();
     
     const stageUrl = `https://decentapps.net/_${appName}/${stageVersion}/`;
     finalSuccess(`Successfully deployed ${uploadCount} files to ${stageUrl}.`);
   } catch (error) {
     // For security reasons, don't show unexpected error details in Github CI output.
-    const showErrorDetails = true; // !runningInGithubCI() || error.name === 'ExpectedError';
+    const showErrorDetails = !runningInGithubCI() || error.name === 'ExpectedError';
     const errorMessage = showErrorDetails ? `Exception: ${error.stack}` : 'An unexpected error occurred.';
     fatalError(errorMessage);
   }
