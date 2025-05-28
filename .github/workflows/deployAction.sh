@@ -40,11 +40,15 @@ cp ./LICENSE "$distPath/"
 cp ./action.yml "$distPath/"
 printf " done\n"
 echo -n "Building \"$actionName\" action in the dist folder..."
-npx esbuild ./main.ts --bundle --platform=node --format=esm --outfile="$distPath"/main.js --minify > /dev/null 2>&1 || {
+tmpErr=$(mktemp)
+npx esbuild ./main.ts --bundle --platform=node --format=esm --outfile="$distPath"/main.js --minify > "$tmpErr" 2>&1 || {
   printf " FAILED\n"
   echo "::error::Failed to build \"$actionName\" action."
+  echo "::error::Build error details:"
+  cat "$tmpErr"
   exit 1
 }
+rm -f "$tmpErr"
 printf " done\n"
 
 echo -n "Does new dist folder build differ from what is already in the action repo?..."
