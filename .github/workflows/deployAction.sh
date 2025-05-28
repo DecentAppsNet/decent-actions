@@ -68,6 +68,14 @@ if git rev-parse "$nextVersion" >/dev/null 2>&1; then
 fi
 printf " $nextVersion\n"
 
+echo -n "Writing version file..."
+echo "$nextVersion" > "$distPath/version.txt" || {
+  printf " FAILED\n"
+  echo "::error::Failed to write version file for \"$actionName\" action."
+  exit 1
+}
+printf " done\n"
+
 echo -n "Deploying new version of action..."
 git config user.name "Decent Deploy Bot"
 git config user.email "info@decentapps.net"
