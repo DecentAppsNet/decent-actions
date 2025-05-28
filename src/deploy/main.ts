@@ -4,9 +4,22 @@ import { endGroup, fatalError, finalSuccess, getGithubCommitHash, getInput, getP
 import { doesDirectoryExist, findFilesAtPath, writeAppVersionFile } from '../common/localFileUtil.ts';
 import { putFile, putStageIndex } from '../common/partnerServiceClient.ts';
 import { findAppVersions } from '../common/stageIndexUtil.ts';
+import { fetchLatestActionVersion, fetchLocalActionVersion } from '../common/actionVersionUtil.ts';
 
 async function deployAction() {
   try {
+    startGroup('Checking action version');
+      info(`fetch local action version`);
+      const localActionVersion = await fetchLocalActionVersion();
+      info('fetch latest action version');
+      const latestActionVersion = await fetchLatestActionVersion('deploy');
+      if (localActionVersion !== latestActionVersion) {
+        warning(`Local action version ${localActionVersion} does not match latest action version ${latestActionVersion}. Consider updating your action.`);
+      } else {
+        info(`Local action version ${localActionVersion} matches latest action version.`);
+      }
+    endGroup();
+
     startGroup('Collecting inputs')
       // These throw if not set or are invalid.
       info('commit hash');

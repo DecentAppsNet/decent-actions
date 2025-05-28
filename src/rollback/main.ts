@@ -1,9 +1,22 @@
-import { endGroup, fatalError, finalSuccess, getInput, getRepoOwner, info, runningInGithubCI, startGroup } from '../common/githubUtil.ts';
+import { fetchLatestActionVersion, fetchLocalActionVersion } from '../common/actionVersionUtil.ts';
+import { endGroup, fatalError, finalSuccess, getInput, getRepoOwner, info, runningInGithubCI, startGroup, warning } from '../common/githubUtil.ts';
 import { putStageIndex } from '../common/partnerServiceClient.ts';
 import { findAppVersions } from '../common/stageIndexUtil.ts';
 
 async function rollbackAction() {
   try {
+    startGroup('Checking action version');
+      info(`fetch local action version`);
+      const localActionVersion = await fetchLocalActionVersion();
+      info('fetch latest action version');
+      const latestActionVersion = await fetchLatestActionVersion('rollback');
+      if (localActionVersion !== latestActionVersion) {
+        warning(`Local action version ${localActionVersion} does not match latest action version ${latestActionVersion}. Consider updating your action.`);
+      } else {
+        info(`Local action version ${localActionVersion} matches latest action version.`);
+      }
+    endGroup();
+
     // Get all params. These throw if not set or are invalid.
     startGroup('Collecting inputs');
       // These throw if not set or are invalid.
