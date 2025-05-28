@@ -1,14 +1,13 @@
-import { execSync } from 'child_process';
-
+import path from 'path';
 import { executeTasksWithMaxConcurrency } from '../common/concurrentUtil.ts';
 import { endGroup, fatalError, finalSuccess, getGithubCommitHash, getInput, getProjectLocalPath, getRepoOwner, info, runningInGithubCI, startGroup, warning } from '../common/githubUtil.ts';
-import { createDirectoryAsNeeded, doesFileExist, findFilesAtPath, writeAppVersionFile } from '../common/localFileUtil.ts';
+import { doesDirectoryExist, findFilesAtPath, writeAppVersionFile } from '../common/localFileUtil.ts';
 import { putFile, putStageIndex } from '../common/partnerServiceClient.ts';
 import { findAppVersions } from '../common/stageIndexUtil.ts';
 
 async function deployAction() {
   try {
-    startGroup('Collecting required inputs')
+    startGroup('Collecting inputs')
       // These throw if not set or are invalid.
       info('commit hash');
       const stageVersion = getGithubCommitHash(); // Env var GITHUB_SHA - can be a 7-character or 40-character alphanumeric. For testing purposes, "9999999" is good.
@@ -24,21 +23,11 @@ async function deployAction() {
 
     // Write version.txt file to the local dist path. This file will be uploaded with other files and can be used to verify the deployment.
     startGroup('Preparing local dist path and version file');
-      const localDistPath = `${projectLocalPath}/dist/`;
-      info('create dist directory');
-      await createDirectoryAsNeeded(localDistPath);
+      info('check for dist directory');  
+      const localDistPath = path.join(projectLocalPath, 'dist');
+      if (!await doesDirectoryExist(localDistPath)) fatalError(`Local dist directory missing. Your Github workflow (e.g., .github/workflows/deploy.yml) should check out your project and build/copy to the ./dist folder all files meant for deployment.`);
       info('write version file');
       await writeAppVersionFile(stageVersion, localDistPath);
-    endGroup();
-
-    startGroup('Running build command');
-      info('check for package.json');
-      if (!await doesFileExist(`${projectLocalPath}/package.json`)) {
-        info('No package.json found. Relying on the ./dist directory being pre-built.');
-      } else {
-        info('package.json found. Running npm run build to build to ./dist directory.');
-        execSync('npm run build', { stdio: 'inherit' });
-      }
     endGroup();
     
     // Create a set of task functions to upload files concurrently.
