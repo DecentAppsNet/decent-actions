@@ -9,7 +9,9 @@ export async function fetchLatestActionVersion(actionName:string):Promise<string
 
 export async function fetchLocalActionVersion(): Promise<string> {
   try {
-    const versionContent = await readFile(path.join(__dirname, 'version.txt'), 'utf8');
+    const localFilepath = path.join(__dirname, 'version.txt');
+    console.log(`Reading local action version from ${localFilepath}`); // TODO delete
+    const versionContent = await readFile(localFilepath, 'utf8');
     return versionContent.trim();
   } catch (error) {
     throw new Error(`Failed to read local action version: ${(error as Error).message}`);

@@ -43,7 +43,7 @@ async function promoteAction() {
     finalSuccess(`Successfully pointed production URL "${productionUrl}" to ${stageVersion} version. ${rollbackDescription}`);
   } catch (error) {
     // For security reasons, don't show unexpected error details in Github CI output.
-    const showErrorDetails = !runningInGithubCI() || error.name === 'ExpectedError';
+    const showErrorDetails = true; // !runningInGithubCI() || error.name === 'ExpectedError'; TODO put it back
     const errorMessage = showErrorDetails ? error.message : 'An unexpected error occurred.';
     fatalError(errorMessage);
   }
