@@ -14,7 +14,6 @@ export async function fetchLatestActionVersion(actionName:string):Promise<string
 export async function fetchLocalActionVersion():Promise<string> {
   try {
     const localFilepath = path.join(actionPath, 'version.txt');
-    console.log(`Reading local action version from ${localFilepath}`); // TODO delete
     const versionContent = await readFile(localFilepath, 'utf8');
     return versionContent.trim();
   } catch (error) {
