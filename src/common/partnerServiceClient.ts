@@ -29,8 +29,8 @@ export async function putFile(repoOwner:string, partnerApiKey:string, appName:st
 export async function putStageIndex(repoOwner:string, partnerApiKey:string, appName:string, stageVersion:string, 
     productionVersion:string, rollbackVersion:string, updateRoute:boolean) {
   const path = updateRoute 
-    ? `/api/deployment/${appName}/index.html`
-    : `/api/deployment/${appName}/index.html?updateRoute=true`;
+    ? `/api/deployment/${appName}/index.html?updateRoute=true`
+    : `/api/deployment/${appName}/index.html`;
   const options:RequestOptions = {
     hostname: API_HOSTNAME,
     path,
