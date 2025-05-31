@@ -22,3 +22,7 @@ The required API key and app name are provided during your provisioning process 
 # Support / Filing Issues
 
 Use the [create-decent-app issue tracker](https://github.com/DecentAppsNet/create-decent-app/issues) rather than the issue tracker on this repo.
+
+# Contact
+
+For support and bugs, please use the issue tracking link mentioned above. For other things, you can email us at info@decentapps.net.
