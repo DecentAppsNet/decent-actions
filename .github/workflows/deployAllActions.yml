@@ -23,7 +23,7 @@ jobs:
           node-version: '20'
 
       - name: Install esbuild
-        run: npm install esbuild
+        run: npm install -g esbuild
 
       - name: Build and Deploy "Deploy" Action
         run: .github/workflows/deployAction.sh deploy
