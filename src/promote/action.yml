@@ -1,4 +1,4 @@
-name: 'Promote'
+name: 'Decent Apps - Promote to Production'
 description: 'Promote staged app to production on decentapps.net'
 author: 'Erik Hermansen'
 branding:

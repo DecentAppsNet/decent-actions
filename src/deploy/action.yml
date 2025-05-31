@@ -1,4 +1,4 @@
-name: 'Deploy'
+name: 'Decent Apps - Deploy to Staging'
 description: 'Deploy app to staging on decentapps.net'
 author: 'Erik Hermansen'
 branding:

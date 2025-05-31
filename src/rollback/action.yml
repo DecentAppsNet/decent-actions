@@ -1,4 +1,4 @@
-name: 'Rollback'
+name: 'Decent Apps - Rollback Production Release'
 description: 'Roll back app to previous production version on decentapps.net'
 author: 'Erik Hermansen'
 branding:
