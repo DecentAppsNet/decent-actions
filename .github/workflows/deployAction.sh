@@ -41,7 +41,7 @@ cp ./action.yml "$distPath/"
 printf " done\n"
 echo -n "Building \"$actionName\" action in the dist folder..."
 tmpErr=$(mktemp)
-npx esbuild ./main.ts --bundle --platform=node --format=esm --outfile="$distPath"/main.js --minify > "$tmpErr" 2>&1 || {
+esbuild ./main.ts --bundle --platform=node --format=esm --outfile="$distPath"/main.js --target=node20 > "$tmpErr" 2>&1 || {
   printf " FAILED\n"
   echo "::error::Failed to build \"$actionName\" action."
   echo "::error::Build error details:"
